@@ -1,10 +1,29 @@
 $(document).ready(function () {
     "use strict";
+     
+    var credits = {
+        value : 0
+    }
+        
+    var animInfo = {
+        frame : 0,
+        lastUpdateTime : 0,
+        acDelta : 0,
+        msPerFrame : 100
+    }
     
-    var frame = 0;
-    var lastUpdateTime = 0;
-    var acDelta = 0;
-    var msPerFrame = 100;
+    var playAttract = {
+        status : true
+    }
+    
+    var pos = {
+        x : 0,
+        y : 0,
+        dx : 0,
+        dy : 0,
+        step : -20,
+        collision : false
+    }
     
     window.requestAnimFrame = (function(){
         return  window.requestAnimationFrame       ||
@@ -15,113 +34,126 @@ $(document).ready(function () {
                 function( callback ){
                   window.setTimeout(callback, 1000 / 60);
                 };
-    })();    
-    
+    })();
+  
     var gameArea = {
         canvas : document.getElementById("myCanvas"),
         start : function() {
-            this.canvas.width = 1000;
-            this.canvas.height = 530;
+//            this.canvas.width = 1000;
+//            this.canvas.height = 800;//530;
+            this.canvas.width = window.innerWidth - 200;
+            this.canvas.height = window.innerHeight - 200;//530;            
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         }
     };    
     
-    function createimage(){
+    function startattract(){
       var img = new Image();
       img.src = 'image/attract.png';
       img.onload = function(){
-             x = gameArea.canvas.width + 94;
-             y = gameArea.canvas.height + 94;          
+             pos.x = gameArea.canvas.width + 94;
+             pos.y = gameArea.canvas.height + 94;
              gameArea.imageref = img;
              gameArea.coinradius = 84;
              redraw();
-             setTimeout( update, 1000 / 60 );
+             update();
       }
     }
 
     function redraw() {
         gameArea.context.clearRect(0, 0, gameArea.canvas.width, gameArea.canvas.height);
-        gameArea.context.fillStyle = '#000000';
-        gameArea.context.fillRect(0, 0, gameArea.canvas.width, gameArea.canvas.height);
-        gameArea.context.save();
-//        gameArea.context.scale(0.5,0.5);
-        gameArea.context.drawImage(gameArea.imageref, frame*100, 0, 92, 94, x, y, 92, 94);
-        gameArea.context.restore();
+//        gameArea.context.fillStyle = '#ccffcc';//'#000000';
+//        gameArea.context.fillRect(0, 0, gameArea.canvas.width, gameArea.canvas.height);
+        if (playAttract.status) {        
+            gameArea.context.save();
+            gameArea.context.drawImage(gameArea.imageref, animInfo.frame*100, 0, 92, 94, pos.x, pos.y, 92, 94);
+            gameArea.context.restore();
+        }
     }    
     
     function update() {
-        requestAnimFrame(update);
-    
-        var delta = Date.now() - lastUpdateTime;
-        if (acDelta > msPerFrame)
-        {
-            acDelta = 0;
-            calculateposition();
-            redraw();
-            frame++;
-            if (frame >= 8) frame = 0;
-        } 
-        else
-        {
-            acDelta += delta;
+        if (playAttract.status) {
+            requestAnimFrame(update);
+
+            var delta = Date.now() - animInfo.lastUpdateTime;
+            if (animInfo.acDelta > animInfo.msPerFrame)
+            {
+                animInfo.acDelta = 0;
+                calculateposition();
+                redraw();
+                animInfo.frame++;
+                if (animInfo.frame >= 8) animInfo.frame = 0;
+            } 
+            else
+            {
+                animInfo.acDelta += delta;
+            }
+
+            animInfo.lastUpdateTime = Date.now();
         }
-    
-        lastUpdateTime = Date.now();
     }
         
-    gameArea.start();
-    
-    var x = 0;
-    var y = 0;
-    var dx = 0;
-    var dy = 0;
-    var step = -20;
-    var collision = false;
-    
     function calculateposition() {  
         
-        if (!collision){        
-            if(x + dx > gameArea.canvas.width - gameArea.coinradius ) {
-                dx = -10;
+        if (!pos.collision){        
+            if(pos.x + pos.dx > gameArea.canvas.width - gameArea.coinradius ) {
+                pos.dx = -10;
             }
 
-            if (x + dx < step) {
-                dx = 94;
-                collision = true;
+            if (pos.x + pos.dx < pos.step) {
+                pos.dx = 42;
+                pos.collision = true;
             }
 
-            if(y + dy > gameArea.canvas.height - gameArea.coinradius) {
-                    dy = -10;
+            if(pos.y + pos.dy > gameArea.canvas.height - gameArea.coinradius) {
+                    pos.dy = -10;
             }        
 
-            if (y + dy < step ) {
-                dy = 94;
-                collision = true;
+            if (pos.y + pos.dy < pos.step ) {
+                pos.dy = 42;
+                pos.collision = true;
             }
 
-            x += dx;
-            y += dy;
+            pos.x += pos.dx;
+            pos.y += pos.dy;
         }
     }    
     
-    createimage();
-    
-    var credits = 0;
-    
+    // Insert credits
     $('#credits').on('click', function(event) {
-//      alert("Insert Credit");
-        credits += 100;
-        $(this).html("Credits: $" + credits + ".00");
-    });    
+        if (credits.value <= 0) {
+            playAttract.status = false;
+            credits.value += 100;
+            $(this).html("Credits: $" + credits.value + ".00");
+              // clear
+            redraw();
+        }
+    });
     
+    // Collect credits
     $('#collect').on('click', function(event) {
-        if (credits > 0) {
-            credits = 0;
-//            $("pull-left.credits").html("Credits: $" + credits + ".00");             
+        if (credits.value > 0) {
+                playAttract.status = true;
+                pos.x = gameArea.canvas.width + 94;
+                pos.y = gameArea.canvas.height + 94;
+                pos.collision = false;
+                animInfo.frame = 0;
+                animInfo.lastUpdateTime = 0;
+                animInfo.acDelta = 0;
+                redraw();
+                update();
+                credits.value = 0;
+                $("#credits").html("Credits: $" + credits.value + ".00");             
         }
         else{
-            alert("No Credits");
+            alert("No Credits to collect");
         }
-    });        
+    });
+    
+    // Create game area
+    gameArea.start();
+    
+    // start attract animation
+    startattract();
 });
