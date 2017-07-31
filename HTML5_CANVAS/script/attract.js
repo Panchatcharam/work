@@ -39,9 +39,7 @@ $(document).ready(function () {
     var gameArea = {
         canvas : document.getElementById("myCanvas"),
         start : function() {
-//            this.canvas.width = 1000;
-//            this.canvas.height = 800;//530;
-            this.canvas.width = window.innerWidth - 200;
+            this.canvas.width = window.innerWidth - 100;
             this.canvas.height = window.innerHeight - 200;
             this.context = this.canvas.getContext("2d");
             document.body.insertBefore(this.canvas, document.body.childNodes[0]);
